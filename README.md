@@ -1,39 +1,73 @@
-# ROS Project Template
+# Blue Nav2 Plugins
 
-Setting up a new ROS project often requires a significant amount of
-preparation and boilerplate configuration, costing you valuable robot
-development time 🤖. Recognizing this, we have put together this template
-repository configured with a ROS development environment, continuous
-integration, and more. This project is the result of much trial and error
-across many projects, and we hope that this helps you save some effort in
-setting up your own projects.
+The following Nav2 plugins provide basic 3D planning and control suitable for open water. They all
+ignore the global and local costmaps. They all largely ignore yaw, though the
+`PurePursuitController3D` will generate a value for yaw (`angular.z`) in `cmd_vel`.
 
-## Features
+> Note for Humble: Nav2 now includes
+> a [velocity smoother](https://navigation.ros.org/configuration/packages/configuring-velocity-smoother.html)
+> node which takes cmd_vel output from the Nav2 controller(s) and does velocity, acceleration, and deadband smoothing.
+> This node isn't 3D-aware, so it isn't used in Blue.
 
-The main features of this template are:
+## StraightLinePlanner3D
 
-- A development environment for Visual Studio Code including a [development container](https://code.visualstudio.com/docs/devcontainers/containers)
-and configurations for linting and auto-formatting your code
-- Docker images that support deployment to a variety of systems (e.g., arm64
-systems)
-- Continuous integration and deployment pipelines using GitHub Actions
-- GitHub Issue and Pull Request templates
+The `StraightLinePlanner3D` plugin is similar to the
+[`StraightLinePlanner`](https://github.com/ros-planning/navigation2_tutorials/tree/master/nav2_straightline_planner)
+plugin.
+The planner can plan in two segments (vertical motion first, then horizontal) or one segment
+(vertical and horizontal motion combined).
 
-## Quick start
+Parameters:
 
-Using this template is as easy as 1, 2, 3...
+| Parameter     | Type   | Default | Notes                                 |
+|---------------|--------|---------|---------------------------------------|
+| planning_dist | double | 0.1     | How far apart the plan poses are, m   |
+| z_before_xy   | bool   | false   | If true plan in 2 segments: z then xy |
 
-1. Use this repository [as a template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template)
-for your project
-2. Replace all instances of "ros-template" with your own project's name and all
-instances of "robotic-decision-making-lab" with your own user's name
-3. Replace the source code with your own project!
+## PurePursuitController3D
 
-Feel free to remove any unused configurations/pipelines and to adjust things as
-you see fit for your project!
+The `PurePursuitController3D` plugin is similar to the
+[`PurePursuitController`](https://github.com/ros-planning/navigation2_tutorials/tree/master/nav2_pure_pursuit_controller)
+plugin.
+It limits horizontal, vertical and yaw acceleration to reduce pitching and drift.
+The BlueROV2 frame is holonomic, but forward/backward drag is lower than the left/right drag, so the
+controller generates diff-drive motion (`linear.x`, `linear.z` and `angular.z`).
 
-## Getting help
+Parameters:
 
-If you have questions regarding usage of this project or would like to
-contribute, please ask a question on our [Discussions](https://github.com/Robotic-Decision-Making-Lab/ros-template/discussions)
-board!
+| Parameter           | Type   | Default | Notes                                                                                                |
+|---------------------|--------|---------|------------------------------------------------------------------------------------------------------|
+| xy_vel              | double | 0.4     | Desired horizontal velocity, m/s                                                                     |
+| xy_accel            | double | 0.4     | Max horizontal acceleration, m/s^2                                                                   |
+| z_vel               | double | 0.2     | Desired vertical velocity, m/s                                                                       |
+| z_accel             | double | 0.2     | Max vertical acceleration, m/s^2                                                                     |
+| yaw_vel             | double | 0.4     | Desired yaw velocity, r/s                                                                            |
+| yaw_accel           | double | 0.4     | Max yaw acceleration, r/s^2                                                                          |
+| lookahead_dist      | double | 1.0     | Lookahead distance for pure pursuit algorithm, m                                                     |
+| transform_tolerance | double | 1.0     | How stale a transform can be and still be used, s                                                    |
+| goal_tolerance      | double | 0.1     | Stop moving when goal is closer than goal_tolerance. Should be less than the values in GoalChecker3D |
+| tick_rate           | double | 20      | The BT tick rate, used to calculate dt                                                               |
+
+## ProgressChecker3D
+
+The `ProgressChecker3D` plugin is similar to the
+[`SimpleProgressChecker`](https://github.com/ros-planning/navigation2/tree/main/nav2_controller/plugins) plugin.
+
+Parameters:
+
+| Parameter      | Type   | Default | Notes                                        |
+|----------------|--------|---------|----------------------------------------------|
+| radius         | double | 0.5     | Minimum distance to move, m                  |
+| time_allowance | double | 10.0    | Time allowed to move the minimum distance, s |
+
+## GoalChecker3D
+
+The `GoalChecker3D` plugin is similar to the
+[`SimpleGoalChecker`](https://github.com/ros-planning/navigation2/tree/main/nav2_controller/plugins) plugin.
+
+Parameters:
+
+| Parameter         | Type   | Default | Notes                     |
+|-------------------|--------|---------|---------------------------|
+| xy_goal_tolerance | double | 0.25    | Horizontal goal tolerance |
+| z_goal_tolerance  | double | 0.25    | Vertical goal tolerance   |
